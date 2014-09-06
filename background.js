@@ -1,7 +1,13 @@
 var IDEAL_LEN = 20;
+var stopWords = [ 'the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have',
+'I', 'it', 'for', 'not', 'on', 'with', 'he', 'as', 'you', 'do',
+'at', 'this', 'but', 'his', 'by', 'from', 'they', 'we', 'say', 'her',
+'she', 'or', 'an', 'will', 'my', 'one', 'all', 'would', 'there', 'their',
+'what'];
+
 (function($) {
   var fullText = '';
-  var keywords = [];
+  var keywords = ['default', 'supplied', 'given'];
   var path_parts = window.location.pathname.split('/');
   keywords.push(path_parts[path_parts.length-1])
   keywords.push(path_parts[path_parts.length-2])
@@ -22,7 +28,11 @@ var IDEAL_LEN = 20;
     }
   });
   var flattenedText = flattenHTML(fullText);
-  var sentences = flattenedText.split('.');
+  var words = flattenedText.split(' ');
+  keywords.push(topItems(words, 2));
+  var sentences = flattenedText.split('.').filter(function(sentence){
+    return !(sentence === '');
+  });
   var ranked = {};
 
   sentences.sort(function(sentence){ return rankText(sentence, keywords); });
@@ -34,15 +44,40 @@ var IDEAL_LEN = 20;
 })(jQuery);
 
 
+
 function rankText(text, keywords){
   var keywordRank = countAppearances(text, keywords.join(' '));
   var lenRank     = (1 - Math.abs(IDEAL_LEN - text.length) / IDEAL_LEN);
   return keywordRank*1.5 + lenRank;
 }
 
+function topItems(array, n){
+  var all = {};
+  array.forEach(function(item){
+    // only want words that aren't command and only contain A-Z and a-z
+    if (stopWords.indexOf(item) !== -1 || item.search(/\W/) !== -1){
+      return;
+    }
+    if (typeof all[item] === 'undefined'){
+      all[item] = 1;
+    } else {
+      all[item]++;
+    }
+  });
 
-// Utility functions below
-// non-business logic
+  var sortedKeys = Object.keys(all).sort(function(key){
+    return all[key];
+  });
+
+  var i = 0;
+  var topN = [];
+  sortedKeys.forEach(function(word){
+    i++;
+    if (i > n) {return;}
+    topN.push(word);
+  });
+  return topN
+}
 
 function countAppearances(haystack, needle){
   var regexp = new RegExp( needle, 'g');
@@ -56,6 +91,10 @@ function countAppearances(haystack, needle){
 
 function flattenHTML(text){
   var html = $($.parseHTML(text));
+  var type = html[0].tagName;
+  if (type == 'CODE'){
+    return text;
+  }
   if (html.text() == text){
     return text;
   } else {
