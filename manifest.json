@@ -1,8 +1,8 @@
 {
-  "name": "mdnteaser",
+  "name": "MDNTeaser",
   "version": "0.0.1",
   "manifest_version": 2,
-  "description": "adds text teaser to mdn",
+  "description": "Intelligently extracts important bits from MDN pages",
 
   "permissions": [
     "tabs",
